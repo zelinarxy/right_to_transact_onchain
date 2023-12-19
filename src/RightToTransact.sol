@@ -159,8 +159,8 @@ contract RightToTransact is ERC721, OwnableRoles {
     function withdrawEth() public onlyRoles(2) {
         uint256 balance = address(this).balance;
 
-        fren.transfer(balance / 5); // 20%
-        ownerMaybeRenounced.transfer((balance * 4) / 5); // 80%
+        fren.call{ value: (balance * 20) / 100 }("");
+        ownerMaybeRenounced.call{ value: (balance * 80) / 100 }("");
     }
 
     function withdrawToken(address tokenAddress) public onlyRoles(1) {
