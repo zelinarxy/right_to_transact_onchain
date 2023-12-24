@@ -17,8 +17,8 @@ contract WithdrawEth is Script {
         RightToTransact rightToTransact = RightToTransact(
             // (un)comment as needed
             vm.envAddress("DEPLOYED_ADDRESS_SEPOLIA")
-            // vm.envAddress("DEPLOYED_ADDRESS_MAINNET")
         );
+        // vm.envAddress("DEPLOYED_ADDRESS_MAINNET")
 
         // update as needed
         rightToTransact.withdrawEth();

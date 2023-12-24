@@ -5,20 +5,23 @@ import "forge-std/Script.sol";
 import "forge-std/console.sol";
 
 interface RightToTransact {
-    function tokenURI(uint256 _tokenId) external returns (string memory text);
+    function read(uint256 index) external returns (string memory text);
 }
 
 contract Read is Script {
     function run() external {
         vm.startBroadcast();
 
-        RightToTransact rightToTransact = RightToTransact(
-            vm.envAddress("DEPLOYED_ADDRESS_MAINNET")
-        );
+        RightToTransact rightToTransact = RightToTransact(vm.envAddress("DEPLOYED_ADDRESS_SEPOLIA"));
 
-        string memory text = rightToTransact.tokenURI(1);
+        for (uint256 i; i < 1;) {
+            string memory text = rightToTransact.read(i);
+            console.log(text);
 
-        console.log(text);
+            unchecked {
+                ++i;
+            }
+        }
 
         vm.stopBroadcast();
     }

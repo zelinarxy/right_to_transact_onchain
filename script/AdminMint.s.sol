@@ -5,10 +5,7 @@ import "forge-std/Script.sol";
 import "@solady/src/utils/LibZip.sol";
 
 interface RightToTransact {
-    function adminMint(
-        address _to,
-        uint256 _amount
-    ) external payable returns (uint256[] memory);
+    function adminMint(address _to, uint256 _amount) external payable returns (uint256[] memory);
 }
 
 contract AdminMint is Script {
@@ -20,8 +17,8 @@ contract AdminMint is Script {
         RightToTransact rightToTransact = RightToTransact(
             // (un)comment as needed
             vm.envAddress("DEPLOYED_ADDRESS_SEPOLIA")
-            // vm.envAddress("DEPLOYED_ADDRESS_MAINNET")
         );
+        // vm.envAddress("DEPLOYED_ADDRESS_MAINNET")
 
         // update as needed
         rightToTransact.adminMint(address(0x6CE36aF4159b0437e85EDEA0b29a1861EfeCc76A), 2);

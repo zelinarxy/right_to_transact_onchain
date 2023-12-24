@@ -17,8 +17,8 @@ contract WithdrawToken is Script {
         RightToTransact rightToTransact = RightToTransact(
             // (un)comment as needed
             vm.envAddress("DEPLOYED_ADDRESS_SEPOLIA")
-            // vm.envAddress("DEPLOYED_ADDRESS_MAINNET")
         );
+        // vm.envAddress("DEPLOYED_ADDRESS_MAINNET")
 
         // update as needed
         rightToTransact.withdrawToken(address(0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14));

@@ -9,6 +9,8 @@ import "./lib/DummyNFT.sol";
 import "./lib/DummyToken.sol";
 import "../src/RightToTransact.sol";
 
+// TODO: use startPrank, stopPrank
+
 interface CheatCodes {
     function expectRevert(bytes calldata) external;
 
@@ -24,8 +26,7 @@ contract RightToTransactTest is Test {
 
     string NAME = "RightToTransact";
     string SYMBOL = "RTT";
-    uint256 MAX_SUPPLY = 1_000_000;
-    uint256 PRICE = 25e15;
+    uint256 PRICE = 1e16;
 
     address payable OWNER_ADDRESS = payable(address(2));
     address payable FREN_ADDRESS = payable(address(3));
@@ -35,25 +36,16 @@ contract RightToTransactTest is Test {
     address payable RECEIVER_ADDRESS = payable(address(7));
     address payable TOKEN_NFT_SENDER_ADDRESS = payable(address(8));
 
-    bytes html =
-        LibZip.flzCompress(
-            bytes(
-                unicode"<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>The right to transact</title></head><body><h1>The right to transact</h1><p>© Zelinar XY 2023</p><p style=\"page-break-before:always\"><em>And he causeth all, both small and great, rich and poor, free and bond, to receive a mark in their right hand, or in their foreheads: And that no man might buy or sell, save he that had the mark, or the name of the beast, or the number of his name.</em><br><br>Revelation 13:16-17</p><h2>Tl;dr</h2><p>Until a few decades ago, we enjoyed a near-complete freedom to transact when, where and with whom we pleased. Centralized control over the ability to buy and sell was impossible, as was centralized surveillance of individual transactions.</p><p>This freedom was a good thing, and now, as a result of rapidly evolving technology, it's disappearing.</p><p>The Canadian government has invoked emergency powers to freeze protesters' bank accounts without due process. PayPal has declared its intention to monitor users' speech and fine them for expressing views the company considers objectionable.</p><p>Across the industrialized world, central banks are planning to replace national currencies with central bank digital currencies (CBDCs). These will enable states to track and, if they wish, block or reverse any monetary transaction, no matter how trivial.</p><p>We can't accept this outcome. The freedom to transact needs to be seen as a fundamental right, on par with the freedom of speech. To do otherwise risks forfeiting protections we once took for granted against potentially horrific abuse: the ability to earn money and spend it on daily necessities without seeking the approval of powerful, unaccountable institutions.</p></body></html>"
-            )
-        );
-
-
+    bytes html = LibZip.flzCompress(
+        bytes(
+            unicode"<!DOCTYPE html><html><head><meta charset=&quot;utf-8&quot;><title>The right to transact</title></head><body><h1>The right to transact</h1><p>© Zelinar XY 2023</p><p style=&quot;page-break-before:always&quot;><em>And he causeth all, both small and great, rich and poor, free and bond, to receive a mark in their right hand, or in their foreheads: And that no man might buy or sell, save he that had the mark, or the name of the beast, or the number of his name.</em><br><br>Revelation 13:16-17</p><h2>Tl;dr</h2><p>Until a few decades ago, we enjoyed a near-complete freedom to transact when, where and with whom we pleased. Centralized control over the ability to buy and sell was impossible, as was centralized surveillance of individual transactions.</p><p>This freedom was a good thing, and now, as a result of rapidly evolving technology, it&apos;s disappearing.</p><p>The Canadian government has invoked emergency powers to freeze protesters&apos; bank accounts without due process. PayPal has declared its intention to monitor users&apos; speech and fine them for expressing views the company considers objectionable.</p><p>Across the industrialized world, central banks are planning to replace national currencies with central bank digital currencies (CBDCs). These will enable states to track and, if they wish, block or reverse any monetary transaction, no matter how trivial.</p><p>We can&apos;t accept this outcome. The freedom to transact needs to be seen as a fundamental right, on par with the freedom of speech. To do otherwise risks forfeiting protections we once took for granted against potentially horrific abuse: the ability to earn money and spend it on daily necessities without seeking the approval of powerful, unaccountable institutions.</p></body></html>"
+        )
+    );
 
     function setUp() public {
         cheats.prank(OWNER_ADDRESS);
 
-        rightToTransact = new RightToTransact(
-            NAME,
-            SYMBOL,
-            MAX_SUPPLY,
-            PRICE,
-            FREN_ADDRESS
-        );
+        rightToTransact = new RightToTransact(NAME, SYMBOL, PRICE, FREN_ADDRESS);
 
         dummyToken = new DummyToken(100e18);
         dummyToken.transfer(TOKEN_NFT_SENDER_ADDRESS, 100e18);
@@ -73,9 +65,10 @@ contract RightToTransactTest is Test {
         rightToTransact.write(data);
 
         cheats.prank(MINTER_ONE_ADDRESS);
-        rightToTransact.mint{value: 25e15}(MINTER_ONE_ADDRESS, 1);
+        rightToTransact.mint{value: 1e16}(MINTER_ONE_ADDRESS, 1);
 
-        // console.log(rightToTransact.tokenURI(1));
+        cheats.prank(MINTER_ONE_ADDRESS);
+        console.log(rightToTransact.read(0));
     }
 
     function testWrite() public {
@@ -87,9 +80,10 @@ contract RightToTransactTest is Test {
         rightToTransact.write(data);
 
         cheats.prank(MINTER_ONE_ADDRESS);
-        rightToTransact.mint{value: 25e15}(MINTER_ONE_ADDRESS, 1);
+        rightToTransact.mint{value: 1e16}(MINTER_ONE_ADDRESS, 1);
 
-        assertEq(rightToTransact.tokenURI(1), unicode"<!-- 1 -->🥝");
+        cheats.prank(MINTER_ONE_ADDRESS);
+        assertEq(rightToTransact.read(0), unicode"🥝");
     }
 
     function testFailWriteUnauthorized() public {
@@ -110,16 +104,18 @@ contract RightToTransactTest is Test {
         rightToTransact.write(data);
 
         cheats.prank(MINTER_ONE_ADDRESS);
-        rightToTransact.mint{value: 25e15}(MINTER_ONE_ADDRESS, 1);
+        rightToTransact.mint{value: 1e16}(MINTER_ONE_ADDRESS, 1);
 
-        assertEq(rightToTransact.tokenURI(1), unicode"<!-- 1 -->🥝");
+        cheats.prank(MINTER_ONE_ADDRESS);
+        assertEq(rightToTransact.read(0), unicode"🥝");
 
         bytes memory newData = LibZip.flzCompress(bytes(unicode"🎩"));
 
         cheats.prank(OWNER_ADDRESS);
         rightToTransact.overwrite(0, newData);
 
-        assertEq(rightToTransact.tokenURI(1), unicode"<!-- 1 -->🎩");
+        cheats.prank(MINTER_ONE_ADDRESS);
+        assertEq(rightToTransact.read(0), unicode"🎩");
     }
 
     function testFailOverwriteUnauthorized() public {
@@ -131,20 +127,20 @@ contract RightToTransactTest is Test {
 
     function testMintTotalSupply() public {
         cheats.prank(MINTER_ONE_ADDRESS);
-        rightToTransact.mint{value: 25e15 * 3}(MINTER_ONE_ADDRESS, 3);
+        rightToTransact.mint{value: 1e16 * 3}(MINTER_ONE_ADDRESS, 3);
         assertEq(rightToTransact.totalSupply(), 3);
 
         cheats.prank(MINTER_TWO_ADDRESS);
-        rightToTransact.mint{value: 25e15 * 5}(MINTER_TWO_ADDRESS, 5);
+        rightToTransact.mint{value: 1e16 * 5}(MINTER_TWO_ADDRESS, 5);
         assertEq(rightToTransact.totalSupply(), 8);
     }
 
     function testMintUserBalance() public {
         cheats.prank(MINTER_ONE_ADDRESS);
-        rightToTransact.mint{value: 25e15}(MINTER_ONE_ADDRESS, 1);
+        rightToTransact.mint{value: 1e16}(MINTER_ONE_ADDRESS, 1);
 
         cheats.prank(MINTER_TWO_ADDRESS);
-        rightToTransact.mint{value: 25e15 * 4}(MINTER_TWO_ADDRESS, 4);
+        rightToTransact.mint{value: 1e16 * 4}(MINTER_TWO_ADDRESS, 4);
 
         assertEq(rightToTransact.balanceOf(MINTER_ONE_ADDRESS), 1);
         assertEq(rightToTransact.balanceOf(MINTER_TWO_ADDRESS), 4);
@@ -152,10 +148,10 @@ contract RightToTransactTest is Test {
 
     function testMintTokenOwner() public {
         cheats.prank(MINTER_ONE_ADDRESS);
-        rightToTransact.mint{value: 25e15 * 2}(MINTER_ONE_ADDRESS, 2);
+        rightToTransact.mint{value: 1e16 * 2}(MINTER_ONE_ADDRESS, 2);
 
         cheats.prank(MINTER_TWO_ADDRESS);
-        rightToTransact.mint{value: 25e15}(MINTER_TWO_ADDRESS, 1);
+        rightToTransact.mint{value: 1e16}(MINTER_TWO_ADDRESS, 1);
 
         assertEq(rightToTransact.ownerOf(1), MINTER_ONE_ADDRESS);
         assertEq(rightToTransact.ownerOf(2), MINTER_ONE_ADDRESS);
@@ -164,22 +160,20 @@ contract RightToTransactTest is Test {
 
     function testMintContractBalance() public {
         cheats.prank(MINTER_ONE_ADDRESS);
-        rightToTransact.mint{value: 25e15 * 2}(MINTER_ONE_ADDRESS, 2);
+        rightToTransact.mint{value: 1e16 * 2}(MINTER_ONE_ADDRESS, 2);
 
         cheats.prank(MINTER_TWO_ADDRESS);
-        rightToTransact.mint{value: 25e15}(MINTER_TWO_ADDRESS, 1);
+        rightToTransact.mint{value: 1e16}(MINTER_TWO_ADDRESS, 1);
 
-        assertEq(address(rightToTransact).balance, 25e15 * 3);
+        assertEq(address(rightToTransact).balance, 1e16 * 3);
     }
 
     function testMintExpectedRevertInsufficientPayment() public {
         cheats.prank(MINTER_ONE_ADDRESS);
 
-        cheats.expectRevert(
-            abi.encodeWithSelector(InsufficientPayment.selector)
-        );
+        cheats.expectRevert(abi.encodeWithSelector(InsufficientPayment.selector));
 
-        rightToTransact.mint{value: 25e15}(MINTER_ONE_ADDRESS, 2);
+        rightToTransact.mint{value: 1e16}(MINTER_ONE_ADDRESS, 2);
     }
 
     function testAdminMintTotalSupply() public {
@@ -217,23 +211,19 @@ contract RightToTransactTest is Test {
 
     function testTransfer() public {
         cheats.prank(MINTER_ONE_ADDRESS);
-        rightToTransact.mint{value: 25e15}(MINTER_ONE_ADDRESS, 1);
+        rightToTransact.mint{value: 1e16}(MINTER_ONE_ADDRESS, 1);
 
         assertEq(rightToTransact.ownerOf(1), MINTER_ONE_ADDRESS);
 
         cheats.prank(MINTER_ONE_ADDRESS);
-        rightToTransact.safeTransferFrom(
-            MINTER_ONE_ADDRESS,
-            RECEIVER_ADDRESS,
-            1
-        );
+        rightToTransact.safeTransferFrom(MINTER_ONE_ADDRESS, RECEIVER_ADDRESS, 1);
 
         assertEq(rightToTransact.ownerOf(1), RECEIVER_ADDRESS);
     }
 
     function testWithdrawEthByOwner() public {
         cheats.prank(MINTER_ONE_ADDRESS);
-        rightToTransact.mint{value: 25e15 * 10}(MINTER_ONE_ADDRESS, 10);
+        rightToTransact.mint{value: 1e16 * 10}(MINTER_ONE_ADDRESS, 10);
 
         assertEq(OWNER_ADDRESS.balance, 0);
         assertEq(FREN_ADDRESS.balance, 0);
@@ -241,13 +231,13 @@ contract RightToTransactTest is Test {
         cheats.prank(OWNER_ADDRESS);
         rightToTransact.withdrawEth();
 
-        assertEq(OWNER_ADDRESS.balance, 25e15 * 8);
-        assertEq(FREN_ADDRESS.balance, 25e15 * 2);
+        assertEq(OWNER_ADDRESS.balance, 1e16 * 8);
+        assertEq(FREN_ADDRESS.balance, 1e16 * 2);
     }
 
     function testWithdrawEthByFren() public {
         cheats.prank(MINTER_ONE_ADDRESS);
-        rightToTransact.mint{value: 25e15 * 20}(MINTER_ONE_ADDRESS, 20);
+        rightToTransact.mint{value: 1e16 * 20}(MINTER_ONE_ADDRESS, 20);
 
         assertEq(OWNER_ADDRESS.balance, 0);
         assertEq(FREN_ADDRESS.balance, 0);
@@ -255,13 +245,13 @@ contract RightToTransactTest is Test {
         cheats.prank(FREN_ADDRESS);
         rightToTransact.withdrawEth();
 
-        assertEq(OWNER_ADDRESS.balance, 25e15 * 16);
-        assertEq(FREN_ADDRESS.balance, 25e15 * 4);
+        assertEq(OWNER_ADDRESS.balance, 1e16 * 16);
+        assertEq(FREN_ADDRESS.balance, 1e16 * 4);
     }
 
     function testFailWithdrawEthUnauthorized() public {
         cheats.prank(MINTER_ONE_ADDRESS);
-        rightToTransact.mint{value: 25e15 * 5}(MINTER_ONE_ADDRESS, 5);
+        rightToTransact.mint{value: 1e16 * 5}(MINTER_ONE_ADDRESS, 5);
 
         cheats.prank(NASTY_ADDRESS);
         rightToTransact.withdrawEth();
@@ -289,11 +279,7 @@ contract RightToTransactTest is Test {
 
     function testWithdrawNFTByOwner() public {
         cheats.prank(TOKEN_NFT_SENDER_ADDRESS);
-        dummyNFT.transferFrom(
-            TOKEN_NFT_SENDER_ADDRESS,
-            address(rightToTransact),
-            1
-        );
+        dummyNFT.transferFrom(TOKEN_NFT_SENDER_ADDRESS, address(rightToTransact), 1);
 
         assertEq(dummyNFT.ownerOf(1), address(rightToTransact));
 
@@ -305,11 +291,7 @@ contract RightToTransactTest is Test {
 
     function testFailWithdrawNFTByFren() public {
         cheats.prank(TOKEN_NFT_SENDER_ADDRESS);
-        dummyNFT.transferFrom(
-            TOKEN_NFT_SENDER_ADDRESS,
-            address(rightToTransact),
-            1
-        );
+        dummyNFT.transferFrom(TOKEN_NFT_SENDER_ADDRESS, address(rightToTransact), 1);
 
         assertEq(dummyNFT.ownerOf(1), address(rightToTransact));
 
@@ -329,12 +311,12 @@ contract RightToTransactTest is Test {
         rightToTransact.renounceOwnership();
 
         cheats.prank(MINTER_ONE_ADDRESS);
-        rightToTransact.mint{value: 25e15 * 10}(MINTER_ONE_ADDRESS, 10);
+        rightToTransact.mint{value: 1e16 * 10}(MINTER_ONE_ADDRESS, 10);
 
         cheats.prank(OWNER_ADDRESS);
         rightToTransact.withdrawEth();
 
-        assertEq(OWNER_ADDRESS.balance, 25e15 * 8);
+        assertEq(OWNER_ADDRESS.balance, 1e16 * 8);
     }
 
     function testRenounceContractWithdrawToken() public {
@@ -357,11 +339,7 @@ contract RightToTransactTest is Test {
         rightToTransact.renounceOwnership();
 
         cheats.prank(TOKEN_NFT_SENDER_ADDRESS);
-        dummyNFT.transferFrom(
-            TOKEN_NFT_SENDER_ADDRESS,
-            address(rightToTransact),
-            1
-        );
+        dummyNFT.transferFrom(TOKEN_NFT_SENDER_ADDRESS, address(rightToTransact), 1);
 
         assertEq(dummyNFT.ownerOf(1), address(rightToTransact));
 
@@ -395,7 +373,7 @@ contract RightToTransactTest is Test {
         rightToTransact.renounceOwnership();
 
         cheats.prank(MINTER_ONE_ADDRESS);
-        rightToTransact.mint{value: 25e15}(MINTER_ONE_ADDRESS, 1);
+        rightToTransact.mint{value: 1e16}(MINTER_ONE_ADDRESS, 1);
 
         bytes memory newData = LibZip.flzCompress(bytes(unicode"🎩"));
 
@@ -409,5 +387,54 @@ contract RightToTransactTest is Test {
 
         cheats.prank(OWNER_ADDRESS);
         rightToTransact.adminMint(MINTER_ONE_ADDRESS, 6);
+    }
+
+    function testSetBaseURI() public {
+        cheats.prank(OWNER_ADDRESS);
+        rightToTransact.setBaseURI("ipfs://super/");
+        assertEq(rightToTransact.baseURI(), "ipfs://super/");
+    }
+
+    function testTokenURI() public {
+        cheats.prank(OWNER_ADDRESS);
+        rightToTransact.setBaseURI("ipfs://lmfao/");
+
+        cheats.prank(MINTER_ONE_ADDRESS);
+        rightToTransact.mint{value: 12 * 1e16}(MINTER_ONE_ADDRESS, 12);
+
+        assertEq(rightToTransact.tokenURI(1), "ipfs://lmfao/1");
+        assertEq(rightToTransact.tokenURI(12), "ipfs://lmfao/12");
+    }
+
+    function testFailTokenURIZero() public {
+        cheats.prank(OWNER_ADDRESS);
+        rightToTransact.setBaseURI("ipfs://lmfao/");
+
+        cheats.prank(MINTER_ONE_ADDRESS);
+        rightToTransact.mint{value: 1e16}(MINTER_ONE_ADDRESS, 1);
+
+        rightToTransact.tokenURI(0);
+    }
+
+    function testFailTokenURINonexistent() public {
+        cheats.prank(OWNER_ADDRESS);
+        rightToTransact.setBaseURI("ipfs://lmfao/");
+
+        cheats.prank(MINTER_ONE_ADDRESS);
+        rightToTransact.mint{value: 1e16}(MINTER_ONE_ADDRESS, 1);
+
+        rightToTransact.tokenURI(2);
+    }
+
+    function testFailTokenURI() public {
+        cheats.prank(NASTY_ADDRESS);
+        rightToTransact.setBaseURI("ipfs://badwrong/");
+    }
+
+    function testReadExpectedRevertNoTokenMinted() public {
+        cheats.expectRevert(abi.encodeWithSelector(NoTokenMinted.selector));
+
+        cheats.prank(NASTY_ADDRESS);
+        rightToTransact.read(0);
     }
 }

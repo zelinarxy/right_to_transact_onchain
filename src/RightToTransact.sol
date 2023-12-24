@@ -14,15 +14,11 @@ interface IERC20 {
 }
 
 interface IERC721 {
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint256 id
-    ) external payable;
+    function safeTransferFrom(address from, address to, uint256 id) external payable;
 }
 
-error MaxSupplyExceeded();
 error InsufficientPayment();
+error NoTokenMinted();
 
 /**
  * Based on Zodomo's Alexandria contract (see
@@ -30,29 +26,22 @@ error InsufficientPayment();
  *
  */
 contract RightToTransact is ERC721, OwnableRoles {
+    string private _baseURI;
     string private _name;
     string private _symbol;
 
     address payable public ownerMaybeRenounced;
     address payable public fren;
-    uint256 public maxSupply;
     uint256 public price;
 
     address[] public textStorage;
     uint256 public totalSupply;
 
-    constructor(
-        string memory __name,
-        string memory __symbol,
-        uint256 _maxSupply,
-        uint256 _price,
-        address payable _fren
-    ) payable {
+    constructor(string memory __name, string memory __symbol, uint256 _price, address payable _fren) payable {
         _name = __name;
         _symbol = __symbol;
 
         fren = _fren;
-        maxSupply = _maxSupply;
         price = _price;
 
         ownerMaybeRenounced = payable(msg.sender);
@@ -68,6 +57,10 @@ contract RightToTransact is ERC721, OwnableRoles {
         _grantRoles(_fren, 2);
     }
 
+    function baseURI() public view returns (string memory) {
+        return (_baseURI);
+    }
+
     function name() public view override returns (string memory) {
         return (_name);
     }
@@ -76,39 +69,32 @@ contract RightToTransact is ERC721, OwnableRoles {
         return (_symbol);
     }
 
-    function tokenURI(
-        uint256 _tokenId
-    ) public view override returns (string memory text) {
-        text = LibString.concat("<!-- ", LibString.toString(_tokenId));
-        text = LibString.concat(text, " -->");
-
-        for (uint256 i; i < textStorage.length; ) {
-            text = LibString.concat(
-                text,
-                string(LibZip.flzDecompress(SSTORE2.read(textStorage[i])))
-            );
-
-            unchecked {
-                ++i;
-            }
-        }
+    function setBaseURI(string memory __baseURI) public onlyOwner {
+        _baseURI = __baseURI;
     }
 
-    function mint(
-        address _to,
-        uint256 _amount
-    ) public payable returns (uint256[] memory) {
+    function tokenURI(uint256 tokenId) public view override returns (string memory) {
+        if (tokenId > totalSupply || tokenId == 0) revert TokenDoesNotExist();
+
+        return LibString.concat(_baseURI, LibString.toString(tokenId));
+    }
+
+    function read(uint256 index) public view returns (string memory text) {
+        if (this.balanceOf(msg.sender) == 0) {
+            revert NoTokenMinted();
+        }
+
+        text = string(LibZip.flzDecompress(SSTORE2.read(textStorage[index])));
+    }
+
+    function mint(address _to, uint256 _amount) public payable returns (uint256[] memory) {
         if (_amount * price > msg.value) {
             revert InsufficientPayment();
         }
 
-        if (totalSupply + _amount > maxSupply) {
-            revert MaxSupplyExceeded();
-        }
-
         uint256[] memory tokens = new uint256[](_amount);
 
-        for (uint256 i; i < _amount; ) {
+        for (uint256 i; i < _amount;) {
             _mint(_to, ++totalSupply);
             tokens[i] = totalSupply;
 
@@ -120,17 +106,10 @@ contract RightToTransact is ERC721, OwnableRoles {
         return (tokens);
     }
 
-    function adminMint(
-        address _to,
-        uint256 _amount
-    ) public payable onlyOwner returns (uint256[] memory) {
-        if (totalSupply + _amount > maxSupply) {
-            revert MaxSupplyExceeded();
-        }
-
+    function adminMint(address _to, uint256 _amount) public payable onlyOwner returns (uint256[] memory) {
         uint256[] memory tokens = new uint256[](_amount);
 
-        for (uint256 i; i < _amount; ) {
+        for (uint256 i; i < _amount;) {
             _mint(_to, ++totalSupply);
             tokens[i] = totalSupply;
 
@@ -143,7 +122,7 @@ contract RightToTransact is ERC721, OwnableRoles {
     }
 
     function write(bytes[] memory _byteData) external onlyOwner {
-        for (uint256 i; i < _byteData.length; ) {
+        for (uint256 i; i < _byteData.length;) {
             textStorage.push(SSTORE2.write(_byteData[i]));
 
             unchecked {
@@ -159,8 +138,8 @@ contract RightToTransact is ERC721, OwnableRoles {
     function withdrawEth() public onlyRoles(2) {
         uint256 balance = address(this).balance;
 
-        fren.call{ value: (balance * 20) / 100 }("");
-        ownerMaybeRenounced.call{ value: (balance * 80) / 100 }("");
+        fren.call{value: (balance * 20) / 100}("");
+        ownerMaybeRenounced.call{value: (balance * 80) / 100}("");
     }
 
     function withdrawToken(address tokenAddress) public onlyRoles(1) {

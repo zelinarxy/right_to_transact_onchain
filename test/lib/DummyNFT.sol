@@ -16,9 +16,7 @@ contract DummyNFT is ERC721 {
         return "DNFT";
     }
 
-    function tokenURI(
-        uint256 id
-    ) public view virtual override returns (string memory) {
+    function tokenURI(uint256 id) public view virtual override returns (string memory) {
         return LibString.toString(id);
     }
 

@@ -9,13 +9,7 @@ contract Deploy is Script {
         uint256 privateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(privateKey);
 
-        RightToTransact rightToTransact = new RightToTransact(
-            "Right to Transact",
-            "RTT",
-            10000,
-            25e15,
-            payable(vm.envAddress("FREN_ADDRESS_MAINNET"))
-        );
+        new RightToTransact("Right to Transact", "RTT", 1e16, payable(vm.envAddress("FREN_ADDRESS_TESTNET")));
 
         vm.stopBroadcast();
     }
