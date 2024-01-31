@@ -18,7 +18,6 @@ interface IERC721 {
 }
 
 error InsufficientPayment();
-error NoTokenMinted();
 
 /**
  * Based on Zodomo's Alexandria contract (see
@@ -80,10 +79,6 @@ contract RightToTransact is ERC721, OwnableRoles {
     }
 
     function read(uint256 index) public view returns (string memory text) {
-        if (this.balanceOf(msg.sender) == 0) {
-            revert NoTokenMinted();
-        }
-
         text = string(LibZip.flzDecompress(SSTORE2.read(textStorage[index])));
     }
 
