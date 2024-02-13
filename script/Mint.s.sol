@@ -13,9 +13,7 @@ contract Mint is Script {
         uint256 privateKey = vm.envUint("MALLORY_PRIVATE_KEY");
         vm.startBroadcast(privateKey);
 
-        RightToTransact rightToTransact = RightToTransact(
-            vm.envAddress("DEPLOYED_ADDRESS_SEPOLIA")
-        );
+        RightToTransact rightToTransact = RightToTransact(vm.envAddress("DEPLOYED_ADDRESS_SEPOLIA"));
 
         // update as needed
         rightToTransact.mint{value: 1e16}(address(0x6CE36aF4159b0437e85EDEA0b29a1861EfeCc76A), 1);

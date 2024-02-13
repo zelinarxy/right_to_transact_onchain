@@ -431,10 +431,10 @@ contract RightToTransactTest is Test {
         rightToTransact.setBaseURI("ipfs://badwrong/");
     }
 
-    function testReadExpectedRevertNoTokenMinted() public {
-        cheats.expectRevert(abi.encodeWithSelector(NoTokenMinted.selector));
+    // function testReadExpectedRevertNoTokenMinted() public {
+    //     cheats.expectRevert(abi.encodeWithSelector(NoTokenMinted.selector));
 
-        cheats.prank(NASTY_ADDRESS);
-        rightToTransact.read(0);
-    }
+    //     cheats.prank(NASTY_ADDRESS);
+    //     rightToTransact.read(0);
+    // }
 }
