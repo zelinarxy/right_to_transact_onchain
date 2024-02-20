@@ -12,7 +12,7 @@ contract Reentrant {
     }
 
     fallback() external payable {
-        if (address(rightToTransact).balance > 0 ) {
+        if (address(rightToTransact).balance > 0) {
             rightToTransact.withdrawEth();
         }
     }
