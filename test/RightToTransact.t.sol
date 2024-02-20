@@ -7,9 +7,8 @@ import "solmate/test/utils/DSTestPlus.sol";
 import "@solady/src/utils/LibString.sol";
 import "./lib/DummyNFT.sol";
 import "./lib/DummyToken.sol";
+import "./lib/Reentrant.sol";
 import "../src/RightToTransact.sol";
-
-// TODO: use startPrank, stopPrank
 
 interface CheatCodes {
     function expectRevert(bytes calldata) external;
@@ -23,18 +22,19 @@ contract RightToTransactTest is Test {
     RightToTransact public rightToTransact;
     DummyNFT public dummyNFT;
     DummyToken public dummyToken;
+    Reentrant public reentrant;
 
     string NAME = "RightToTransact";
     string SYMBOL = "RTT";
     uint256 PRICE = 1e16;
 
     address payable OWNER_ADDRESS = payable(address(2));
-    address payable FREN_ADDRESS = payable(address(3));
-    address payable MINTER_ONE_ADDRESS = payable(address(4));
-    address payable MINTER_TWO_ADDRESS = payable(address(5));
-    address payable NASTY_ADDRESS = payable(address(6));
-    address payable RECEIVER_ADDRESS = payable(address(7));
-    address payable TOKEN_NFT_SENDER_ADDRESS = payable(address(8));
+    address payable MINTER_ONE_ADDRESS = payable(address(3));
+    address payable MINTER_TWO_ADDRESS = payable(address(4));
+    address payable NASTY_ADDRESS = payable(address(5));
+    address payable RECEIVER_ADDRESS = payable(address(6));
+    address payable TOKEN_NFT_SENDER_ADDRESS = payable(address(7));
+    address payable FREN_ADDRESS;
 
     bytes html = LibZip.flzCompress(
         bytes(
@@ -43,9 +43,15 @@ contract RightToTransactTest is Test {
     );
 
     function setUp() public {
+        // assure fren can't rug with a malicious fallback()
+        // not that they would :)
+        reentrant = new Reentrant();
+        address payable REENTRANT_ADDRESS = payable(address(reentrant));
+        FREN_ADDRESS = REENTRANT_ADDRESS;
+
         cheats.prank(OWNER_ADDRESS);
 
-        rightToTransact = new RightToTransact(NAME, SYMBOL, PRICE, FREN_ADDRESS);
+        rightToTransact = new RightToTransact(NAME, SYMBOL, PRICE, REENTRANT_ADDRESS);
 
         dummyToken = new DummyToken(100e18);
         dummyToken.transfer(TOKEN_NFT_SENDER_ADDRESS, 100e18);
@@ -431,6 +437,7 @@ contract RightToTransactTest is Test {
         rightToTransact.setBaseURI("ipfs://badwrong/");
     }
 
+    // removed token gating. anyone can read
     // function testReadExpectedRevertNoTokenMinted() public {
     //     cheats.expectRevert(abi.encodeWithSelector(NoTokenMinted.selector));
 
